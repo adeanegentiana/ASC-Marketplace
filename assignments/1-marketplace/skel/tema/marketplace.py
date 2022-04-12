@@ -6,15 +6,14 @@ Assignment 1
 March 2021
 """
 
-# import unittest
-import itertools
-from collections import defaultdict
-from threading import Lock
-import time
-import logging
-from logging.handlers import RotatingFileHandler
+import unittest  # for unit testing
+import itertools  # for converting dict.values into a list
+from collections import defaultdict  # for dictionaries with key = int and value = list
+from threading import Lock  # for syncronization
+import time  # for settimg gmtime
+import logging  # for logging
+from logging.handlers import RotatingFileHandler  # for rotating log files
 
-# logger = logging.getLogger(__name__)
 logging.basicConfig(
     handlers=[RotatingFileHandler('./marketplace.log', maxBytes=100000, backupCount=10)],
     level=logging.INFO,
@@ -23,7 +22,179 @@ logging.basicConfig(
 logging.Formatter.converter = time.gmtime
 
 
-# logger.error("gmtime")
+class MarketplaceTestCase(unittest.TestCase):
+    """
+        Class that tests all functionalities of the Marketplace.
+    """
+
+    def setUp(self):
+        """
+            Method that allowes user to define instructions
+            that will be executed before each test method
+            In this particular case: defining marketplace
+        """
+        self.marketplace = Marketplace(2)
+
+    def test_register_producer(self):
+        """
+            Tests register_producer() from marketplace
+        """
+        self.assertEqual(self.marketplace.register_producer(), 0, 'wrong id registering producer')
+        self.assertEqual(self.marketplace.producer_id, 1, 'wrong id producer')
+
+    def test_publish(self):
+        """
+            Tests publish(producer_id, product) from marketplace
+            Can't add more than 2 products because queue_size = 2
+        """
+        self.marketplace.register_producer()
+        self.assertTrue(self.marketplace.publish(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        }), 'error publishing')
+        self.assertTrue(self.marketplace.publish(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        }), 'error publishing')
+        # should return false because queue is full
+        self.assertFalse(self.marketplace.publish(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        }), 'error publishing')
+
+    def test_new_cart(self):
+        """
+            Tests new_cart() from marketplace
+            Should return 0 and increase cart_id
+        """
+        self.assertEqual(self.marketplace.new_cart(), 0, 'wrong id returned for new cart')
+        self.assertEqual(self.marketplace.cart_id, 1, 'wrong id for new cart')
+
+    def test_add_to_cart(self):
+        """
+            Tests add_to_cart(cart_id, product) from marketplace
+            Should return true for Linden Tea and false for Error Tea
+        """
+        self.marketplace.new_cart()
+        self.marketplace.register_producer()
+        self.marketplace.publish(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        })
+        self.assertTrue(self.marketplace.add_to_cart(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        }), 'error adding to cart')
+        self.assertFalse(self.marketplace.add_to_cart(0, {
+            "product_type": "Tea",
+            "name": "Error",
+            "type": "Error",
+            "price": 7
+        }), 'this product is not in market')
+
+    def test_remove_from_cart(self):
+        """
+            Tests remove_from_cart(cart_id, product) from marketplace
+            Adding two products and removing one.
+        """
+        self.marketplace.register_producer()
+        self.marketplace.publish(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        })
+        self.marketplace.publish(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        })
+        self.marketplace.new_cart()
+        self.marketplace.add_to_cart(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        })
+        self.marketplace.add_to_cart(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        })
+        self.marketplace.remove_from_cart(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        })
+        self.assertEqual(self.marketplace.carts[0], {0: [{
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        }]}, 'error removing from cart')
+        self.assertEqual(self.marketplace.producers[0], [{
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        }], 'error adding product back in market')
+
+    def test_place_order(self):
+        """
+            Tests place_order(cart_id) from marketplace
+            Places order of two products
+        """
+        self.marketplace.register_producer()
+        self.marketplace.publish(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        })
+        self.marketplace.publish(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        })
+        self.marketplace.new_cart()
+        self.marketplace.add_to_cart(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        })
+        self.marketplace.add_to_cart(0, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        })
+        self.assertEqual(self.marketplace.place_order(0), [{
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        }, {
+            "product_type": "Tea",
+            "name": "Linden",
+            "type": "Herbal",
+            "price": 9
+        }], 'cart should have 2 products')
+
 
 class Marketplace:
     """
@@ -73,14 +244,15 @@ class Marketplace:
         :returns True or False. If the caller receives False, it should wait and then try again.
         """
         logging.info('publishing: producer id is %d and product is %s', producer_id, product)
-        with self.publish_lock:
-            if len(self.producers[producer_id]) >= self.queue_size_per_producer:
-                logging.debug('returning false, queue is full')
-                return False
+        # with self.publish_lock:
+        if len(self.producers[producer_id]) >= self.queue_size_per_producer:
+            logging.debug('returning false, queue is full')
+            return False
 
+        with self.publish_lock:
             self.producers[producer_id].append(product)
-            logging.info('successfuly published product in queue')
-            return True
+        logging.info('successfuly published product in queue')
+        return True
 
     def new_cart(self):
         """
