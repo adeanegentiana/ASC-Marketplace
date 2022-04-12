@@ -34,13 +34,11 @@ class Marketplace:
         """
         self.queue_size_per_producer = queue_size_per_producer
         self.publish_lock = Lock()
-        self.add_to_cart_lock = Lock()
-        # self.remove_from_cart_lock = Lock()
-        # self.place_order_lock = Lock()
+        self.remove_from_cart_lock = Lock()
         self.producer_id = 0
-        # self.producer_id_lock = Lock()
+        self.producer_id_lock = Lock()
         self.cart_id = 0
-        # self.cart_id_lock = Lock()
+        self.cart_id_lock = Lock()
         self.carts = {}
         self.producers = {}
 
@@ -48,8 +46,8 @@ class Marketplace:
         """
         Returns an id for the producer that calls this.
         """
-        # with self.producer_id_lock:
-        current_producer_id = self.producer_id
+        with self.producer_id_lock:
+            current_producer_id = self.producer_id
         self.producers[self.producer_id] = []
         self.producer_id += 1
         return current_producer_id
@@ -79,8 +77,8 @@ class Marketplace:
 
         :returns an int representing the cart_id
         """
-        # with self.cart_id_lock:
-        current_cart_id = self.cart_id
+        with self.cart_id_lock:
+            current_cart_id = self.cart_id
         self.carts[self.cart_id] = defaultdict(list)
         self.cart_id += 1
         return current_cart_id
@@ -97,13 +95,12 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again
         """
-        with self.add_to_cart_lock:
-            for id_producer, products in self.producers.items():
-                if product in products:
-                    products.remove(product)
-                    self.carts[cart_id][id_producer].append(product)
-                    return True
-            return False
+        for id_producer, products in self.producers.items():
+            if product in products:
+                products.remove(product)
+                self.carts[cart_id][id_producer].append(product)
+                return True
+        return False
 
     def remove_from_cart(self, cart_id, product):
         """
@@ -116,13 +113,13 @@ class Marketplace:
         :param product: the product to remove from cart
         """
         cart = self.carts[cart_id]
-        for producer_id, products in cart.items():
-            if product in products:
-                cart[producer_id].remove(product)
-                self.producers[producer_id].append(product)
-                break
-                # if product.name == "Indonezia":
-                #     print("am eliminat Indonezia")
+        with self.remove_from_cart_lock:
+            for producer_id, products in cart.items():
+                if product in products:
+                    cart[producer_id].remove(product)
+                    self.producers[producer_id].append(product)
+                    break
+
 
     def place_order(self, cart_id):
         """
@@ -131,7 +128,6 @@ class Marketplace:
         :type cart_id: Int
         :param cart_id: id cart
         """
-        # with self.place_order_lock:
         list_of_lists_of_products = self.carts[cart_id].values()
         products = list(itertools.chain.from_iterable(list_of_lists_of_products))
         return products
