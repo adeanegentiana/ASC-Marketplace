@@ -1,32 +1,55 @@
-Organizare
+Organizare:
+    Pe lângă scheletul oferit nu am implementat nicio altă metodă în marketplace.py.
+    Metodele propuse sunt îndeajuns pentru a dezvolta această aplicaţie.
 
-Explicație pentru soluția aleasă:
+    Organizarea producerului:
+        Acesta se înregistrează în marketplace şi primeşte un id, după care începe producţia.
+        După ce termină un ciclu de producţie, încearcă să publice în marketplace.
+        Dacă coada este plină, aşteaptă şi încearcă iar mai târziu până când produsele sunt publicate.
+        Se repetă ciclul la infinit, producătorul începând din nou producţia.
 
-Obligatoriu:
+    Organizarea consumerului:
+        Consumerul primeşte un nou cart şi se parcurge lista cu operaţiile de "add" şi "remove".
+            Dacă operaţia este de tip "add", adaugă repetitiv în coş acelaşi produs, de quantity ori.
+            Dacă produsul nu se află în marketplace, aşteaptă până când acesta devine disponibil.
+            Dacă operaţia este de tip "remove", pur şi simplu se scoate produsul din coş şi se adaugă în coada
+            producătorului de la care a fost luat.
+        La final, după ce am parcurs lista de operaţii, consumatorul plasează comanda şi este returnată şi afişată o
+        listă cu produsele pe care acesta le avea în coş.
 
-De făcut referință la abordarea generală menționată în paragraful de mai sus. Aici se pot băga bucăți de cod/funcții - etc.
-Consideri că tema este utilă?
-Consideri implementarea naivă, eficientă, se putea mai bine?
+Implementare:
+    - producers -> dicţionar care reţine id-ul şi coada fiecărui producător
+    - carts     -> dicţionar care reţine id-ul şi "lista" de produse a fiecărui cart
+    Spun "lista" pentru că de fapt este tot un dicţionar.
+    La adăugarea unui produs în cart, se reţine şi id-ul producătorului.
+    Am ales această abordare pentru cazul în care consumatorul doreşte să returneze un produs.
+    La retur, acesta poate fi adăugat în coada producătorului de la care a fost luat.
 
-Opțional:
+    Sincronizare:
+        Sincronizările sunt minime, însă cu câteva lockuri am reuşit să evit situaţiile în care 2 consumatori se
+        înregistrează în acelaşi timp, 2 producători se înregistrează în acelaşi timp şi 2 threaduri încearcă să
+        modifice coada produselor în acelaşi timp. (exemplu: un producător să publice când un consumator returnează)
 
-De menționat cazuri speciale, nespecificate în enunț și cum au fost tratate.
+    Logging:
+        Loggingul este unul simplu, de bază, afişează mesaje în fişierele create cu ajutorul handlerului (maxim 10
+        fişiere).
 
-
-Implementare
-
-De specificat dacă întregul enunț al temei e implementat
-Dacă există funcționalități extra, pe lângă cele din enunț - descriere succintă + motivarea lor
-De specificat funcționalitățile lipsă din enunț (dacă există) și menționat dacă testele reflectă sau nu acest lucru
-Dificultăți întâmpinate
-Lucruri interesante descoperite pe parcurs
-
-
-Resurse utilizate
-
-Resurse utilizate - toate resursele publice de pe internet/cărți/code snippets, chiar dacă sunt laboratoare de ASC
+    Unittesting:
+        Am testat toate funcţionalităţile clasei marketplace, setând dimensiunea maximă a cozii per producer la 3.
 
 
-Git
+Resurse utilizate:
+    Implementare şi sincronizare:
+        - Laborator 1 - ASC
+        - Laborator 2 - ASC
+        - Laborator 3 - ASC
+    Logging:
+        - https://docs.python.org/3/howto/logging.html
+        - https://stackoverflow.com/questions/40088496/how-to-use-pythons-rotatingfilehandler
+        - https://pycodequ.al/docs/pylint-messages/w1203-logging-fstring-interpolation.html (pentru că primeam erori
+          de la pylint legate de afişare)
+    Unittesting:
+        - https://docs.python.org/3/library/unittest.html
 
-Link către repo-ul de git
+Git:
+https://github.com/adeanegentiana/ASC-Marketplace

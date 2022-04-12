@@ -244,7 +244,6 @@ class Marketplace:
         :returns True or False. If the caller receives False, it should wait and then try again.
         """
         logging.info('publishing: producer id is %d and product is %s', producer_id, product)
-        # with self.publish_lock:
         if len(self.producers[producer_id]) >= self.queue_size_per_producer:
             logging.debug('returning false, queue is full')
             return False
