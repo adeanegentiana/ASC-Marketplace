@@ -14,15 +14,16 @@ import time
 import logging
 from logging.handlers import RotatingFileHandler
 
-
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 logging.basicConfig(
-        handlers=[RotatingFileHandler('./marketplace.log', maxBytes=100000, backupCount=10)],
-        level=logging.INFO,
-        format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
-        datefmt='%Y-%m-%dT%H:%M:%S')
+    handlers=[RotatingFileHandler('./marketplace.log', maxBytes=100000, backupCount=10)],
+    level=logging.INFO,
+    format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
+    datefmt='%Y-%m-%dT%H:%M:%S')
 logging.Formatter.converter = time.gmtime
-logger.error("gmtime")
+
+
+# logger.error("gmtime")
 
 class Marketplace:
     """
@@ -56,7 +57,7 @@ class Marketplace:
             current_producer_id = self.producer_id
         self.producers[self.producer_id] = []
         self.producer_id += 1
-        logger.info('registered producer with id %d', current_producer_id)
+        logging.info('registered producer with id %d', current_producer_id)
         return current_producer_id
 
     def publish(self, producer_id, product):
@@ -71,14 +72,14 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again.
         """
-        logger.info('publishing: producer id is %d and product is %s', producer_id, product)
+        logging.info('publishing: producer id is %d and product is %s', producer_id, product)
         with self.publish_lock:
             if len(self.producers[producer_id]) >= self.queue_size_per_producer:
-                logger.debug('returning false, queue is full')
+                logging.debug('returning false, queue is full')
                 return False
 
             self.producers[producer_id].append(product)
-            logger.info('successfuly published product in queue')
+            logging.info('successfuly published product in queue')
             return True
 
     def new_cart(self):
@@ -91,7 +92,7 @@ class Marketplace:
             current_cart_id = self.cart_id
         self.carts[self.cart_id] = defaultdict(list)
         self.cart_id += 1
-        logger.info('registered cart with id %d', current_cart_id)
+        logging.info('registered cart with id %d', current_cart_id)
         return current_cart_id
 
     def add_to_cart(self, cart_id, product):
@@ -110,9 +111,9 @@ class Marketplace:
             if product in products:
                 products.remove(product)
                 self.carts[cart_id][id_producer].append(product)
-                logger.info('successfuly added to cart %d: %s', cart_id, product)
+                logging.info('successfuly added to cart %d: %s', cart_id, product)
                 return True
-        logger.debug('product not in marketplace')
+        logging.debug('product not in marketplace')
         return False
 
     def remove_from_cart(self, cart_id, product):
@@ -131,7 +132,7 @@ class Marketplace:
                 if product in products:
                     cart[producer_id].remove(product)
                     self.producers[producer_id].append(product)
-                    logger.info('successfuly removed from cart %d: %s', cart_id, product)
+                    logging.info('successfuly removed from cart %d: %s', cart_id, product)
                     break
 
     def place_order(self, cart_id):
@@ -143,5 +144,5 @@ class Marketplace:
         """
         list_of_lists_of_products = self.carts[cart_id].values()
         products = list(itertools.chain.from_iterable(list_of_lists_of_products))
-        logger.info('cart %d placed order with products: %s', cart_id, products)
+        logging.info('cart %d placed order with products: %s', cart_id, products)
         return products
